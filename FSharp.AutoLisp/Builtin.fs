@@ -19,7 +19,7 @@ module Builtin =
             "atom", (1, 1); "listp", (1, 1)
             // 判断与类型
             "null", (1, 1); "not", (1, 1); "numberp", (1, 1)
-            "boundp", (1, 1); "type", (1, 1); "eq", (2, 2); "equal", (2, 2)
+            "boundp", (1, 1); "type", (1, 1); "eq", (2, 2); "equal", (2, 3)
             "zerop", (1, 1); "minusp", (1, 1)
             // 数值
             "+", (0, Int32.MaxValue); "-", (1, Int32.MaxValue)
@@ -41,7 +41,7 @@ module Builtin =
             "print", (0, 2); "prompt", (1, 1); "terpri", (0, 1)
             // 几何
             "polar", (3, 3); "angle", (2, 2); "distance", (2, 2)
-            "trans", (3, 3); "osnap", (2, 2); "textbox", (2, 3)
+            "trans", (3, 4); "osnap", (2, 2); "textbox", (1, 2)
             // 用户交互
             "getpoint", (0, 2); "getcorner", (1, 2); "getdist", (0, 2)
             "getangle", (0, 2); "getreal", (0, 1); "getint", (0, 1)
@@ -51,8 +51,8 @@ module Builtin =
             "entmake", (1, 1); "entmakex", (1, 1); "entupd", (1, 1)
             "entnext", (0, 1); "entlast", (0, 0); "handent", (1, 1)
             "entsel", (0, 1); "ssget", (0, 3); "ssname", (2, 2)
-            "ssadd", (0, 1); "ssdel", (2, 2); "sslength", (1, 1)
-            "tblsearch", (2, 3); "tblnext", (2, 2); "tblobjname", (1, 1)
+            "ssadd", (0, 2); "ssdel", (2, 2); "sslength", (1, 1)
+            "tblsearch", (2, 3); "tblnext", (2, 2); "tblobjname", (2, 2)
             "namedobjdict", (0, 0)
             "dictsearch", (2, 2); "dictadd", (3, 3)
             "dictremove", (2, 2); "dictnext", (2, 2)
@@ -74,7 +74,8 @@ module Builtin =
             "vl-string-trim", (2, 2); "vl-string-left-trim", (2, 2)
             "vl-string-right-trim", (2, 2)
             "vl-princ-to-string", (1, 1); "vl-prin1-to-string", (1, 1)
-            "vl-catch-all-apply", (2, Int32.MaxValue)
+            // acad 允许省掉参数表：(vl-catch-all-apply 'f) 也跑
+            "vl-catch-all-apply", (1, 2)
             "vl-catch-all-error-p", (1, 1); "vl-catch-all-error-message", (1, 1)
             "vl-file-delete", (1, 1); "vl-file-size", (1, 1)
             "vl-file-rename", (2, 2); "vl-file-copy", (2, 3)

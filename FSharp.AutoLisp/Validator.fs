@@ -199,45 +199,83 @@ module Validator =
                 | Some(min, max) -> checkArity name min max range args.Length
                 | None -> ()
 
-        /// 点对检查要在引用的数据里也做，所以单独走一遍整棵树
-        let rec checkDots (expr: SExpr) =
+        /// 点对：`'(0 . "LINE")` 是 AutoLISP 的标准写法（entmake 的组码表都这么写），
+        /// 只有在**求值位置**写 `.` 才是错的。所以走树时带一个「这一段是数据」的标记，
+        /// 进了 quote/function 就一直是数据。
+        let rec checkDots (isData: bool) (expr: SExpr) =
             match expr with
             | SSymbol(".", range) ->
-                error "AL0005" range "AutoLISP 不支持点对（dotted pair），这里不能写 ."
-            | SList(items, _) -> items |> List.iter checkDots
+                if not isData then
+                    error
+                        "AL0005"
+                        range
+                        "点对（dotted pair）只能写在引用的数据里，例如 '(0 . \"LINE\")；求值位置不能写 ."
+            | SList(items, _) ->
+                let quoted =
+                    match items with
+                    | SSymbol(head, _) :: _ -> "quote" = lower head || "function" = lower head
+                    | _ -> false
+
+                items |> List.iter(checkDots (isData || quoted))
             | _ -> ()
 
         let rec walk (expr: SExpr) =
             match expr with
             | SList([], _) -> ()
             | SList(head :: rest, range) ->
-                (match head with
-                 | SSymbol(name, _) ->
-                     let lname = lower name
+                let lname =
+                    match head with
+                    | SSymbol(name, _) -> Some(lower name)
+                    | _ -> None
+
+                (match head, lname with
+                 | SSymbol(name, _), Some lname ->
                      if options.CheckSpecialForms && SpecialForm.isSpecial lname then
                          checkSpecial lname rest range
                      elif lname = "t" || lname = "nil" then
                          error "AL0022" head.Range (sprintf "\"%s\" 不是函数" name)
                      else
                          checkBuiltin lname rest range
-                 | SInt _
-                 | SReal _
-                 | SString _ -> error "AL0022" head.Range "调用头不是函数"
+                 | (SInt _
+                   | SReal _
+                   | SString _),
+                   _ -> error "AL0022" head.Range "调用头不是函数"
                  | _ -> ())
 
-                // quote/function 的内容是数据，不做求值层面的检查
-                let isQuoting =
-                    match head with
-                    | SSymbol(name, _) ->
-                        let lname = lower name
-                        lname = "quote" || lname = "function"
-                    | _ -> false
-
-                if not isQuoting then rest |> List.iter walk
+                if options.CheckSpecialForms then
+                    match lname with
+                    | Some lname -> walkRest lname rest
+                    | None -> rest |> List.iter walk
 
             | SSymbol _ -> ()
             | _ -> ()
 
-        exprs |> List.iter checkDots
+        /// 走到一个表的参数部分。有些位置的子表不是调用，得区别对待。
+        and walkRest (lname: string) (rest: SExpr list) =
+            match lname with
+            | "quote"
+            | "function" -> () // 内容是数据，不做求值层面的检查
+
+            | "cond" ->
+                // 子句本身是一个表：(测试 表达式…)。测试写成 t / T 是惯例，不是函数调用，
+                // 所以逐项当表达式走，别把子句头当函数名。
+                for clause in rest do
+                    match clause with
+                    | SList(items, _) -> items |> List.iter walk
+                    | other -> walk other
+
+            | "defun"
+            | "defun-q"
+            | "defmacro"
+            | "lambda" ->
+                // rest = 名字/参数表 :: 参数表 :: 函数体…；参数表是变量声明，不是调用
+                // （参数名偶尔就叫 car / list，当调用检查会误报）
+                match rest with
+                | _ :: _params :: body -> body |> List.iter walk
+                | _ -> ()
+
+            | _ -> rest |> List.iter walk
+
+        exprs |> List.iter(checkDots false)
         exprs |> List.iter walk
         diagnostics |> Seq.sortBy(fun d -> d.Range.Start.Offset) |> List.ofSeq

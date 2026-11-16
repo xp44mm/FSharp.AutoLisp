@@ -118,34 +118,65 @@ let private tokenize (input: string) =
 
 /// 中文全角字符在 AutoLISP 里只是普通符号字符，报错信息很难看懂，
 /// 所以单独扫一遍源码。放在词法层面，括号不平衡时也能提示。
+///
+/// 只报**代码里**的全角字符：注释（`;` 到行尾、`;| … |;`）和字符串里的全角字符
+/// 是正常内容 —— 注释里写中文、字符串里放全角标点都很常见，报了只是噪音。
 let private checkFullWidth (input: string) =
     let suspicious = set [ '“'; '”'; '‘'; '’'; '（'; '）'; '；'; '，'; '：'; '＇'; '　' ]
     let diagnostics = ResizeArray<Diagnostic>()
     let mutable line = 1
     let mutable column = 1
     let mutable i = 0
+    let mutable inString = false
+    let mutable escaped = false
+    let mutable lineComment = false
+    let mutable blockComment = false
 
     while i < input.Length do
         let c = input.[i]
-        if suspicious.Contains c then
+        let next = if i + 1 < input.Length then input.[i + 1] else '\000'
+        let mutable step = 1
+
+        if lineComment then
+            if c = '\r' || c = '\n' then lineComment <- false
+        elif blockComment then
+            if c = '|' && next = ';' then
+                blockComment <- false
+                step <- 2
+        elif inString then
+            if escaped then escaped <- false
+            elif c = '\\' then escaped <- true
+            elif c = '"' then inString <- false
+        elif c = ';' && next = '|' then
+            blockComment <- true
+            step <- 2
+        elif c = ';' then
+            lineComment <- true
+        elif c = '"' then
+            inString <- true
+        elif suspicious.Contains c then
             diagnostics.Add(
                 Diagnostic.warning
                     "AL0023"
-                    (SourceRange.point { Line = line; Column = column; Offset = i })
+                    (SourceRange.point {
+                        Line = line
+                        Column = column
+                        Offset = i
+                    })
                     (sprintf "出现了全角字符「%c」，AutoLISP 只认半角字符" c)
             )
 
-        if c = '\r' && i + 1 < input.Length && input.[i + 1] = '\n' then
+        if c = '\r' && next = '\n' then
             line <- line + 1
             column <- 1
-            i <- i + 2
+            step <- 2
         elif c = '\r' || c = '\n' then
             line <- line + 1
             column <- 1
-            i <- i + 1
         else
-            column <- column + 1
-            i <- i + 1
+            column <- column + step
+
+        i <- i + step
 
     List.ofSeq diagnostics
 

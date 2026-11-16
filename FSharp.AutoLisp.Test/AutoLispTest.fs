@@ -38,9 +38,21 @@ let ``多余的右括号`` () =
     Assert.Equal<string list>([ "AL0001" ], codes "(princ))")
 
 [<Fact>]
-let ``不支持点对`` () =
-    let result = check "(setq a '(1 . 2))"
-    Assert.Contains(result.Diagnostics, fun d -> d.Code = "AL0005")
+let ``引用的点对是合法数据`` () =
+    // entmake 的组码表就是这么写的：'(0 . "LINE")
+    let result = check "(entmake (list '(0 . \"LINE\") (cons 10 '(0.0 0.0 0.0))))"
+    Assert.DoesNotContain(result.Diagnostics, fun d -> d.Code = "AL0005")
+
+[<Fact>]
+let ``求值位置写点对报错`` () =
+    let result = check "(foo 1 . 2)"
+    let diagnostic = result.Diagnostics |> List.find(fun d -> d.Code = "AL0005")
+    Assert.Contains("引用的数据", diagnostic.Message)
+
+[<Fact>]
+let ``cond 子句用 T 当测试不误报`` () =
+    let text = "(defun f (x) (cond ((= x 1) 1) (T 2)))"
+    Assert.Empty((check text).Diagnostics)
 
 [<Fact>]
 let ``setq 变量和值必须成对`` () =
