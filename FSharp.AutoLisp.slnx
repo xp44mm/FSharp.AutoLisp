@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="FSharp.AutoLisp/FSharp.AutoLisp.fsproj" />
+  <Project Path="FSharp.AutoLisp.Generator/FSharp.AutoLisp.Generator.fsproj" />
+  <Project Path="FSharp.AutoLisp.Test/FSharp.AutoLisp.Test.fsproj" />
+  <Project Path="FSharp.AutoLisp.Check/FSharp.AutoLisp.Check.fsproj" />
+</Solution>

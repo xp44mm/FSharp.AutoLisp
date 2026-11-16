@@ -1,0 +1,41 @@
+﻿{
+module FSharp.AutoLisp.AutoLispLexer
+open System
+open FSharp.Idioms
+open FSharp.Idioms.Literal
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+open FSharp.AutoLisp
+}
+
+// AutoLISP 的词法规则与 JSON/Common Lisp 都不同：
+//   - 注释是 ';' 到行尾，块注释是 ';|' ... '|;'
+//   - 字符串可以跨行，转义是 \" \\ \n \t \r \e \nnn
+//   - 符号字符集很宽（1+、-、. 都可以是符号），没有 # 读取宏
+//   - 数字只有整数和实数两种
+
+let digit = [ '0'-'9' ]
+let whitespace = [ ' ' '\t' '\r' '\n' ]
+let sign = [ '+' '-' ]
+let dot = [^ '\r' '\n' ]
+let symbolChar = [^ '(' ')' '"' ';' '\'' ' ' '\t' '\r' '\n' ]
+
+let signedInteger = sign? digit+
+let fraction = '.' digit*
+let exponent = ['e' 'E'] sign? digit+
+
+rule : char list -> AutoLispToken list =
+whitespace+ { [] }
+';' '|' ([^ '|' ] | '|' [^ ';' ])* '|' ';' { [] }
+';' [^ '|' '\r' '\n' ] dot* { [] }
+';' { [] }
+'(' { [LPAREN] }
+')' { [RPAREN] }
+'\'' { [QUOTE] }
+'"' ([^ '\\' '"' ] | '\\' _)* '"' { [STRING(AutoLispString.unquote buff)] }
+signedInteger fraction exponent? { [REAL(String.build buff)] }
+signedInteger exponent { [REAL(String.build buff)] }
+'.' digit+ exponent? { [REAL(String.build buff)] }
+signedInteger { [INT(String.build buff)] }
+symbolChar+ { [SYMBOL(String.build buff)] }
+_ { [INVALID(String.build buff)] }

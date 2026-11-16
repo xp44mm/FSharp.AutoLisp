@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Dir.fs" />
+        <None Include="autolisp.fslex" />
+        <Compile Include="AutoLispLexerTest.fs" />
+        <None Include="autolisp.fsyacc" />
+        <Compile Include="AutoLispYaccTest.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\FSharp.AutoLisp\FSharp.AutoLisp.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FSharp.Idioms" Version="1.5.19" />
+        <PackageReference Include="FSharp.LexYacc" Version="0.0.11" />
+        <PackageReference Include="FSharp.LexYacc.ToolBox" Version="0.0.7" />
+        <PackageReference Include="FSharp.xUnit" Version="1.4.1" />
+        <PackageReference Include="xunit.v3.assert" Version="4.0.3" />
+        <PackageReference Include="xunit.v3.core.mtp-v2" Version="4.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="FSharp.Core" Version="11.0.101" />
+    </ItemGroup>
+
+</Project>

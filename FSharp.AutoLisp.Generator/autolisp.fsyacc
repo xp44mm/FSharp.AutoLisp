@@ -1,0 +1,40 @@
+﻿{
+module FSharp.AutoLisp.AutoLispYacc
+open FSharp.LexYacc
+open FSharp.AutoLisp
+}
+
+// S-表达式的结构文法在 LISP 家族里是通用的：
+//   <datum> ::= <atom> | <list> | <quote>
+// 真正 AutoLISP 独有的部分（defun/setq/cond 等特殊形式）不在文法里，
+// 而在语法树之上由 Validator 检查。
+
+program :
+    | datums { s0 }
+
+datums :
+    | datum { [s0] }
+    | datums datum { s0 @ [s1] }
+
+datum :
+    | atom { s0 }
+    | list { s0 }
+    | quoted { s0 }
+
+atom :
+    | INT { let v, r = s0 in SInt(AutoLispNumber.toInt64 v, r) }
+    | REAL { let v, r = s0 in SReal(AutoLispNumber.toFloat v, r) }
+    | STRING { let v, r = s0 in SString(v, r) }
+    | SYMBOL { let v, r = s0 in SSymbol(v, r) }
+
+list :
+    | LPAREN RPAREN { SList([], { Start = s0.Start; End = s1.End }) }
+    | LPAREN datums RPAREN { SList(s1, { Start = s0.Start; End = s2.End }) }
+
+quoted :
+    | QUOTE datum { SList([SSymbol("quote", s0); s1], { Start = s0.Start; End = s1.Range.End }) }
+
+%type<SourceRange> LPAREN RPAREN QUOTE
+%type<string*SourceRange> INT REAL STRING SYMBOL
+%type<SExpr> atom datum list quoted
+%type<SExpr list> datums program

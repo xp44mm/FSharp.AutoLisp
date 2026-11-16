@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Title>AutoLISP 语法分析器</Title>
+    <Description>用 fslex/fsyacc 生成的 AutoLISP 词法与语法分析器，可在把代码送进 AutoCAD 之前检查语法错误。</Description>
+    <PackageTags>AutoLISP; LISP; parser; fslex; fsyacc</PackageTags>
+    <Version>0.0.1</Version>
+    <Authors>xp44m</Authors>
+    <Company>34696643@qq.com</Company>
+    <Copyright>xp44mm</Copyright>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="SourceRange.fs" />
+    <Compile Include="Diagnostic.fs" />
+    <Compile Include="SExpr.fs" />
+    <Compile Include="AutoLispString.fs" />
+    <Compile Include="AutoLispNumber.fs" />
+    <Compile Include="AutoLispToken.fs" />
+    <Compile Include="AutoLispLexer.fs" />
+    <Compile Include="AutoLispLexerTailer.fs" />
+    <Compile Include="AutoLispYacc.fs" />
+    <Compile Include="SpecialForm.fs" />
+    <Compile Include="Builtin.fs" />
+    <Compile Include="Validator.fs" />
+    <Compile Include="AutoLispCompiler.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Idioms" Version="1.5.19" />
+    <PackageReference Include="FSharp.LexYacc" Version="0.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="11.0.101" />
+  </ItemGroup>
+
+</Project>
